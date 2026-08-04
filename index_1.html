@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cottage Core — Kingdom Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════════════════════════
+   SCORING RULES — edit this block when the rules change.
+   Everything else on the page reads from it. Nothing below the
+   marked line needs touching.
+
+   value:  points awarded per unit (negative for penalties)
+   type:   "count" = player enters a quantity
+           "toggle" = one-off, either earned or not
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  --paper:#E9EAE1;
+  --paper-2:#F3F4ED;
+  --ink:#182019;
+  --ink-2:#4C574D;
+  --ink-3:#7B857C;
+  --rule:#C6C9BA;
+  --road:#A8761F;
+  --city:#93452F;
+  --water:#2F6B8F;
+  --field:#57763C;
+  --stone:#6A6154;
+  --gain:#3F6B35;
+  --loss:#93452F;
+  --focus:#2F6B8F;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:linear-gradient(var(--rule) .5px,transparent .5px),linear-gradient(90deg,var(--rule) .5px,transparent .5px);
+  background-size:44px 44px;
+  color:var(--ink);
+  font:400 16px/1.6 Karla,system-ui,sans-serif;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 96px}
+
+/* ── Masthead ────────────────────────────────────────────── */
+header{padding:56px 0 28px;border-bottom:2px solid var(--ink)}
+.eyebrow{
+  font:500 12px/1 Karla,sans-serif;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 14px;
+}
+h1{
+  font:600 clamp(34px,6vw,56px)/1.02 "Zilla Slab",Georgia,serif;
+  margin:0;letter-spacing:-.015em;
+}
+h1 span{display:block;color:var(--ink-2);font-weight:400}
+.lede{margin:16px 0 0;max-width:52ch;color:var(--ink-2)}
+
+/* ── Layout ──────────────────────────────────────────────── */
+.cols{display:grid;grid-template-columns:1fr 340px;gap:48px;align-items:start;margin-top:40px}
+@media(max-width:900px){.cols{grid-template-columns:1fr;gap:32px}}
+
+/* ── Scoring groups ──────────────────────────────────────── */
+.group{margin:0 0 34px;border-left:3px solid var(--accent,var(--rule));padding-left:18px}
+.group[data-sign="minus"]{border-left-style:double;border-left-width:5px}
+.group-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px}
+.group h2{
+  font:500 21px/1.2 "Zilla Slab",Georgia,serif;margin:0;
+}
+.tag{
+  font:500 11px/1 Karla,sans-serif;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent,var(--ink-3));white-space:nowrap;
+}
+.group-note{margin:2px 0 14px;font-size:14px;color:var(--ink-3);max-width:56ch}
+
+.row{
+  display:grid;grid-template-columns:1fr 62px 116px 64px;gap:12px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--rule);
+}
+.row:last-child{border-bottom:none}
+.row label{font-size:15px;line-height:1.35;cursor:pointer}
+.val{
+  font:500 13px/1 "IBM Plex Mono",monospace;text-align:right;color:var(--ink-3);
+}
+.out{
+  font:500 17px/1 "IBM Plex Mono",monospace;text-align:right;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+.out.on{color:var(--gain)}
+.out.off{color:var(--loss)}
+
+/* ── Steppers ────────────────────────────────────────────── */
+.step{display:flex;border:1px solid var(--ink);background:var(--paper-2)}
+.step button{
+  width:32px;height:34px;flex:none;border:0;background:none;cursor:pointer;
+  font:400 18px/1 Karla,sans-serif;color:var(--ink);
+}
+.step button:hover{background:var(--ink);color:var(--paper-2)}
+.step input{
+  width:100%;min-width:0;border:0;border-left:1px solid var(--rule);border-right:1px solid var(--rule);
+  background:none;text-align:center;color:var(--ink);
+  font:500 16px/1 "IBM Plex Mono",monospace;-moz-appearance:textfield;
+}
+.step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+.toggle{display:flex;align-items:center;justify-content:center}
+.toggle input{width:22px;height:22px;accent-color:var(--field);cursor:pointer}
+
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* ── Survey panel ────────────────────────────────────────── */
+.panel{position:sticky;top:24px;background:var(--paper-2);border:1px solid var(--ink);padding:22px}
+@media(max-width:900px){.panel{position:static}}
+.panel h2{
+  font:500 12px/1 Karla,sans-serif;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);margin:0 0 18px;
+}
+.total{font:500 66px/.9 "Zilla Slab",Georgia,serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.of{font:400 15px/1 Karla,sans-serif;color:var(--ink-3);margin:8px 0 0}
+
+/* Signature element: the kingdom plot — 100 tiles, one per point */
+.plot{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;margin:22px 0 18px}
+.plot i{
+  aspect-ratio:1;background:var(--paper);border:.5px solid var(--rule);
+  transition:background-color .22s ease,border-color .22s ease;
+}
+.plot i.set{background:var(--field);border-color:var(--field)}
+.plot i.lost{background:var(--city);border-color:var(--city)}
+@media(prefers-reduced-motion:reduce){.plot i{transition:none}}
+
+.verdict{font:500 15px/1.45 Karla,sans-serif;margin:0 0 20px;min-height:44px}
+.split{border-top:1px solid var(--rule);padding-top:14px}
+.split div{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--ink-2)}
+.split b{font:500 15px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.split .grand{border-top:1px solid var(--rule);margin-top:8px;padding-top:12px;color:var(--ink)}
+
+.acts{display:flex;gap:10px;margin-top:20px}
+.acts button{
+  flex:1;padding:11px;border:1px solid var(--ink);background:none;cursor:pointer;
+  font:500 12px/1 Karla,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);
+}
+.acts button:hover{background:var(--ink);color:var(--paper-2)}
+
+footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--rule);font-size:14px;color:var(--ink-3);max-width:64ch}
+
+@media print{
+  body{background:#fff}
+  .acts,.step button{display:none}
+  .panel{position:static;border:1px solid #000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Cooperative tile game · End-of-game scoring</p>
+  <h1>Kingdom Survey<span>Cottage Core</span></h1>
+  <p class="lede">Count each feature on the finished board and enter it below. The survey tallies as you go. You need 100 points between you.</p>
+</header>
+
+<div class="cols">
+  <main id="sheet"></main>
+
+  <aside class="panel">
+    <h2>Survey total</h2>
+    <div class="total" id="total">0</div>
+    <p class="of">of 100 needed</p>
+    <div class="plot" id="plot" aria-hidden="true"></div>
+    <p class="verdict" id="verdict">Nothing counted yet.</p>
+    <div class="split">
+      <div><span>Earned</span><b id="pos">+0</b></div>
+      <div><span>Lost</span><b id="neg">0</b></div>
+      <div class="grand"><span>Final score</span><b id="grand">0</b></div>
+    </div>
+    <div class="acts">
+      <button id="reset">Clear</button>
+      <button id="print">Print</button>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  Penalties don't apply to tiles on the outer edge of the map. Values here follow the current rules draft — to change them, edit the <code>RULES</code> block at the top of the script in <code>index.html</code>.
+</footer>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   RULES — this is the only part you need to edit.
+   Add, remove, or re-value any line. The page rebuilds itself.
+   ═══════════════════════════════════════════════════════════════ */
+
+const RULES = [
+  {
+    name: "Road connections",
+    tag: "Earned",
+    color: "var(--road)",
+    note: "A road only scores if it has a distinct start and end.",
+    items: [
+      { label: "Town along a completed road",            value:  1, type: "count" },
+      { label: "Road starts or ends on a monastery",     value:  3, type: "count" },
+      { label: "Road starts or ends on a completed city",value:  5, type: "count" }
+    ]
+  },
+  {
+    name: "Monasteries supplied",
+    tag: "Earned",
+    color: "var(--stone)",
+    note: "Supply must travel along a contiguous series of roads.",
+    items: [
+      { label: "Monastery reaches a farm",   value: 1, type: "count" },
+      { label: "Monastery reaches a garden", value: 3, type: "count" },
+      { label: "Monastery reaches a town",   value: 5, type: "count" }
+    ]
+  },
+  {
+    name: "Cities supplied",
+    tag: "Earned",
+    color: "var(--city)",
+    note: "Supply must travel along a contiguous series of roads.",
+    items: [
+      { label: "City reaches a farm",             value: 1, type: "count" },
+      { label: "City reaches a town",             value: 1, type: "count" },
+      { label: "City reaches a garden",           value: 1, type: "count" },
+      { label: "City tile in a completed city",   value: 1, type: "count" }
+    ]
+  },
+  {
+    name: "Roads broken or incomplete",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--road)",
+    items: [
+      { label: "Road reaches no city or monastery", value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "Monastery rivalry",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--stone)",
+    items: [
+      { label: "Monasteries connected to each other by road", value: -3, type: "count" },
+      { label: "Monasteries within 3 tiles of each other",    value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "City unrest",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--city)",
+    items: [
+      { label: "City not linked to another city by road", value: -3, type: "count" },
+      { label: "City not within 1 tile of water",         value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "Kingdom bonuses",
+    tag: "Once per game",
+    color: "var(--field)",
+    items: [
+      { label: "Every road on the board connects to every other", value: 30, type: "toggle" },
+      { label: "Enclosed gap left inside the map",                value: -5, type: "count" }
+    ]
+  }
+];
+
+const TARGET = 100;
+
+/* Counts are held in sessionStorage, not localStorage. That means a
+   refresh or a phone locking mid-game won't lose the score, but closing
+   the tab wipes it — so every fresh scan of the QR code starts at zero. */
+const SAVE_KEY = "cottagecore-survey";
+
+/* ─────────────────────────────────────────────────────────────
+   Below here is machinery. You shouldn't need to change it.
+   ───────────────────────────────────────────────────────────── */
+
+const sheet = document.getElementById("sheet");
+const plot  = document.getElementById("plot");
+const state = {};
+
+RULES.forEach((group, gi) => {
+  const sec = document.createElement("section");
+  sec.className = "group";
+  sec.style.setProperty("--accent", group.color);
+  if (group.sign) sec.dataset.sign = group.sign;
+
+  const head = document.createElement("div");
+  head.className = "group-head";
+  head.innerHTML = `<h2>${group.name}</h2><span class="tag">${group.tag}</span>`;
+  sec.appendChild(head);
+
+  if (group.note) {
+    const n = document.createElement("p");
+    n.className = "group-note";
+    n.textContent = group.note;
+    sec.appendChild(n);
+  }
+
+  group.items.forEach((item, ii) => {
+    const key = `g${gi}i${ii}`;
+    state[key] = 0;
+
+    const row = document.createElement("div");
+    row.className = "row";
+    const sign = item.value > 0 ? "+" : "";
+    const id = `f-${key}`;
+
+    let control;
+    if (item.type === "toggle") {
+      control = `<div class="toggle"><input type="checkbox" id="${id}" data-key="${key}"></div>`;
+    } else {
+      control = `<div class="step">
+        <button type="button" data-key="${key}" data-delta="-1" aria-label="Decrease ${item.label}">–</button>
+        <input type="number" id="${id}" min="0" step="1" value="0" data-key="${key}" inputmode="numeric">
+        <button type="button" data-key="${key}" data-delta="1" aria-label="Increase ${item.label}">+</button>
+      </div>`;
+    }
+
+    row.innerHTML = `<label for="${id}">${item.label}</label>
+      <span class="val">${sign}${item.value}</span>
+      ${control}
+      <span class="out" data-out="${key}">0</span>`;
+    sec.appendChild(row);
+  });
+
+  sheet.appendChild(sec);
+});
+
+for (let i = 0; i < TARGET; i++) plot.appendChild(document.createElement("i"));
+const cells = [...plot.children];
+
+function valueOf(gi, ii) { return RULES[gi].items[ii].value; }
+
+function recalc() {
+  let pos = 0, neg = 0;
+
+  RULES.forEach((group, gi) => group.items.forEach((item, ii) => {
+    const key = `g${gi}i${ii}`;
+    const qty = state[key];
+    const pts = qty * item.value;
+    const out = document.querySelector(`[data-out="${key}"]`);
+    out.textContent = pts > 0 ? `+${pts}` : `${pts}`;
+    out.className = "out" + (pts > 0 ? " on" : pts < 0 ? " off" : "");
+    if (pts > 0) pos += pts; else neg += pts;
+  }));
+
+  const total = pos + neg;
+  document.getElementById("total").textContent = total;
+  document.getElementById("pos").textContent   = `+${pos}`;
+  document.getElementById("neg").textContent   = neg;
+  document.getElementById("grand").textContent = total;
+
+  const filled = Math.max(0, Math.min(TARGET, total));
+  cells.forEach((c, i) => { c.className = i < filled ? "set" : ""; });
+  if (total < 0) cells.slice(0, Math.min(TARGET, -total)).forEach(c => c.className = "lost");
+
+  const v = document.getElementById("verdict");
+  if (total >= TARGET)      v.textContent = `The kingdom stands. ${total} points — ${total - TARGET} to spare.`;
+  else if (total > 0)       v.textContent = `${TARGET - total} points short of a kingdom.`;
+  else if (total < 0)       v.textContent = `The countryside is in worse shape than you found it.`;
+  else                      v.textContent = `Nothing counted yet.`;
+
+  try { sessionStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function setKey(key, qty) {
+  state[key] = Math.max(0, Math.round(qty) || 0);
+  const field = document.querySelector(`input[data-key="${key}"]`);
+  if (field.type === "checkbox") field.checked = state[key] === 1;
+  else field.value = state[key];
+  recalc();
+}
+
+sheet.addEventListener("click", e => {
+  const btn = e.target.closest("button[data-delta]");
+  if (!btn) return;
+  setKey(btn.dataset.key, state[btn.dataset.key] + Number(btn.dataset.delta));
+});
+
+sheet.addEventListener("input", e => {
+  const f = e.target;
+  if (!f.dataset.key) return;
+  setKey(f.dataset.key, f.type === "checkbox" ? (f.checked ? 1 : 0) : Number(f.value));
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  Object.keys(state).forEach(k => setKey(k, 0));
+});
+document.getElementById("print").addEventListener("click", () => window.print());
+
+try {
+  const saved = JSON.parse(sessionStorage.getItem(SAVE_KEY) || "{}");
+  Object.keys(saved).forEach(k => { if (k in state) setKey(k, saved[k]); });
+} catch (e) {}
+
+recalc();
+</script>
+</body>
+</html>
