@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kingdom Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EAE1;
+  --paper-2:#F3F4ED;
+  --ink:#182019;
+  --ink-2:#4C574D;
+  --ink-3:#7B857C;
+  --rule:#C6C9BA;
+  --road:#A8761F;
+  --city:#93452F;
+  --water:#2F6B8F;
+  --field:#57763C;
+  --stone:#6A6154;
+  --gain:#3F6B35;
+  --loss:#93452F;
+  --focus:#2F6B8F;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:linear-gradient(var(--rule) .5px,transparent .5px),linear-gradient(90deg,var(--rule) .5px,transparent .5px);
+  background-size:44px 44px;
+  color:var(--ink);
+  font:400 16px/1.6 Karla,system-ui,sans-serif;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 96px}
+
+header{padding:56px 0 28px;border-bottom:2px solid var(--ink)}
+.eyebrow{font:500 12px/1 Karla,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+h1{font:600 clamp(34px,6vw,56px)/1.02 "Zilla Slab",Georgia,serif;margin:0;letter-spacing:-.015em}
+h1 span{display:block;color:var(--ink-2);font-weight:400}
+.lede{margin:16px 0 0;max-width:52ch;color:var(--ink-2)}
+
+.cols{display:grid;grid-template-columns:1fr 340px;gap:48px;align-items:start;margin-top:40px}
+@media(max-width:900px){.cols{grid-template-columns:1fr;gap:32px}}
+
+.group{margin:0 0 34px;border-left:3px solid var(--accent,var(--rule));padding-left:18px}
+.group[data-sign="minus"]{border-left-style:double;border-left-width:5px}
+.group-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px}
+.group h2{font:500 21px/1.2 "Zilla Slab",Georgia,serif;margin:0}
+.tag{font:500 11px/1 Karla,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,var(--ink-3));white-space:nowrap}
+.group-note{margin:2px 0 14px;font-size:14px;color:var(--ink-3);max-width:58ch}
+
+.row{display:grid;grid-template-columns:1fr 62px 116px 64px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule)}
+.row:last-child{border-bottom:none}
+.row label{font-size:15px;line-height:1.35;cursor:pointer}
+.val{font:500 13px/1 "IBM Plex Mono",monospace;text-align:right;color:var(--ink-3)}
+.out{font:500 17px/1 "IBM Plex Mono",monospace;text-align:right;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.out.on{color:var(--gain)}
+.out.off{color:var(--loss)}
+
+.step{display:flex;border:1px solid var(--ink);background:var(--paper-2)}
+.step button{width:32px;height:34px;flex:none;border:0;background:none;cursor:pointer;font:400 18px/1 Karla,sans-serif;color:var(--ink)}
+.step button:hover{background:var(--ink);color:var(--paper-2)}
+.step input{width:100%;min-width:0;border:0;border-left:1px solid var(--rule);border-right:1px solid var(--rule);background:none;text-align:center;color:var(--ink);font:500 16px/1 "IBM Plex Mono",monospace;-moz-appearance:textfield}
+.step input::-webkit-outer-spin-button,.step input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.toggle{display:flex;align-items:center;justify-content:center}
+.toggle input{width:22px;height:22px;accent-color:var(--field);cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Per-unit cards (gardens) */
+.unit{border:1px solid var(--rule);background:var(--paper-2);padding:12px 14px;margin-bottom:12px}
+.unit-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.unit-head h3{font:500 15px/1 Karla,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:0}
+.unit-sub{font:500 15px/1 "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.unit-sub.on{color:var(--gain)}
+.rm{border:1px solid var(--rule);background:none;cursor:pointer;font:500 11px/1 Karla,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:6px 9px}
+.rm:hover{border-color:var(--loss);color:var(--loss)}
+.rm[data-armed="1"]{border-color:var(--loss);color:var(--paper-2);background:var(--loss)}
+.add{border:1px dashed var(--ink-3);background:none;cursor:pointer;width:100%;padding:11px;font:500 12px/1 Karla,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.add:hover{border-style:solid;border-color:var(--ink);color:var(--ink)}
+.empty{font-size:14px;color:var(--ink-3);font-style:italic;margin:0 0 12px}
+
+.panel{position:sticky;top:24px;background:var(--paper-2);border:1px solid var(--ink);padding:22px}
+@media(max-width:900px){.panel{position:static}}
+.panel h2{font:500 12px/1 Karla,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin:0 0 18px}
+.total{font:500 66px/.9 "Zilla Slab",Georgia,serif;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.of{font:400 15px/1 Karla,sans-serif;color:var(--ink-3);margin:8px 0 0}
+.plot{display:grid;grid-template-columns:repeat(20,1fr);gap:2px;margin:22px 0 18px}
+.plot i{aspect-ratio:1;background:var(--paper);border:.5px solid var(--rule);transition:background-color .22s ease,border-color .22s ease}
+.plot i.set{background:var(--field);border-color:var(--field)}
+.plot i.lost{background:var(--city);border-color:var(--city)}
+@media(prefers-reduced-motion:reduce){.plot i{transition:none}}
+.verdict{font:500 15px/1.45 Karla,sans-serif;margin:0 0 20px;min-height:44px}
+.split{border-top:1px solid var(--rule);padding-top:14px}
+.split div{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--ink-2)}
+.split b{font:500 15px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.split .grand{border-top:1px solid var(--rule);margin-top:8px;padding-top:12px;color:var(--ink)}
+.acts{display:flex;gap:10px;margin-top:20px}
+.acts button{flex:1;padding:11px;border:1px solid var(--ink);background:none;cursor:pointer;font:500 12px/1 Karla,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.acts button:hover{background:var(--ink);color:var(--paper-2)}
+
+
+footer{margin-top:52px;padding-top:20px;border-top:1px solid var(--rule);font-size:14px;color:var(--ink-3);max-width:64ch}
+
+@media print{
+  body{background:#fff}
+  .acts,.step button,.rm,.add{display:none}
+  .panel{position:static;border:1px solid #000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Cooperative tile game &middot; End-of-game scoring</p>
+  <h1>Kingdom Survey<span>Cartographer</span></h1>
+  <p class="lede">Count each feature on the finished board and enter it below. The survey tallies as you go. You need 100 points between you.</p>
+</header>
+
+<div class="cols">
+  <main id="sheet"></main>
+
+  <aside class="panel">
+    <h2>Survey total</h2>
+    <div class="total" id="total">0</div>
+    <p class="of">of 100 needed</p>
+    <div class="plot" id="plot" aria-hidden="true"></div>
+    <p class="verdict" id="verdict">Nothing counted yet.</p>
+    <div class="split">
+      <div><span>Earned</span><b id="pos">+0</b></div>
+      <div><span>Lost</span><b id="neg">0</b></div>
+      <div class="grand"><span>Final score</span><b id="grand">0</b></div>
+    </div>
+    <div class="acts">
+      <button id="reset">Clear</button>
+      <button id="print">Print</button>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  Penalties don't apply to tiles on the outer edge of the map. Values follow the current rules draft &mdash; to change them, edit the <code>RULES</code> block at the top of the script in <code>index.html</code>.
+</footer>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   RULES — the only part you need to edit.
+
+   Two kinds of group:
+     (default)      one shared count per line
+     mode:"repeat"  one card per unit, added by the player.
+                    Use for features scored individually, like gardens.
+   ═══════════════════════════════════════════════════════════════ */
+
+const RULES = [
+  {
+    name: "Road connections",
+    tag: "Earned",
+    color: "var(--road)",
+    note: "A road scores once it has two endpoints in any combination of city and monastery. Branches with gaps or run-offs don't matter as long as one contiguous path connects two endpoints.",
+    items: [
+      { label: "Town along a completed road",             value: 1, type: "count" },
+      { label: "Road starts or ends on a monastery",      value: 3, type: "count" },
+      { label: "Road starts or ends on a completed city", value: 5, type: "count" }
+    ]
+  },
+  {
+    name: "Monasteries supplied",
+    tag: "Earned",
+    color: "var(--stone)",
+    note: "Supply must travel along a contiguous series of roads.",
+    items: [
+      { label: "Monastery reaches a farm",   value: 1, type: "count" },
+      { label: "Monastery reaches a garden", value: 3, type: "count" },
+      { label: "Monastery reaches a town",   value: 5, type: "count" }
+    ]
+  },
+  {
+    name: "Cities supplied",
+    tag: "Earned",
+    color: "var(--city)",
+    note: "A city is complete when enclosed on all sides by wall edges. Supply must travel along a contiguous series of roads.",
+    items: [
+      { label: "City reaches a farm",           value: 1, type: "count" },
+      { label: "City reaches a town",           value: 1, type: "count" },
+      { label: "City reaches a garden",         value: 1, type: "count" },
+      { label: "City tile in a completed city", value: 1, type: "count" }
+    ]
+  },
+  {
+    name: "Gardens nourished",
+    tag: "Earned",
+    color: "var(--field)",
+    mode: "repeat",
+    unit: "Garden",
+    note: "Survey one garden at a time. Count each neighbouring tile separately — a garden touching two river tiles and one completed city scores 2 and 1, not 1 and 1.",
+    items: [
+      { label: "Adjacent water tiles (river or map edge)", value: 1, type: "count" },
+      { label: "Adjacent unique completed cities",         value: 2, type: "count" },
+      { label: "Adjacent towns on a completed road",       value: 1, type: "count" }
+    ]
+  },
+  {
+    name: "Roads broken or incomplete",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--road)",
+    note: "Only roads where every branch fails to reach two endpoints.",
+    items: [
+      { label: "Road reaches no city or monastery", value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "Monastery rivalry",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--stone)",
+    items: [
+      { label: "Monasteries connected to each other by road", value: -3, type: "count" },
+      { label: "Monasteries within 3 tiles of each other",    value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "City unrest",
+    tag: "Lost",
+    sign: "minus",
+    color: "var(--city)",
+    items: [
+      { label: "City not linked to another city by road", value: -3, type: "count" },
+      { label: "City not within 1 tile of water",         value: -5, type: "count" }
+    ]
+  },
+  {
+    name: "Kingdom bonuses",
+    tag: "Once per game",
+    color: "var(--field)",
+    note: "A gap that could have taken an all-green tile counts as a lake, not an interior gap — don't count those here.",
+    items: [
+      { label: "Every road on the board connects to every other", value: 30, type: "toggle" },
+      { label: "Enclosed interior gap that isn't a lake",         value: -5, type: "count" }
+    ]
+  }
+];
+
+const TARGET = 100;
+
+/* Counts live in sessionStorage: a refresh or a locked phone keeps the
+   score, closing the tab wipes it, so every fresh scan starts at zero. */
+const SAVE_KEY = "kingdom-survey";
+
+/* ─────────────────────────────────────────────────────────────
+   Machinery below. No need to change any of it.
+   ───────────────────────────────────────────────────────────── */
+
+const sheet = document.getElementById("sheet");
+const plot  = document.getElementById("plot");
+
+/* state.flat[key] = number   |   state.units[gi] = [[n,n,n], ...] */
+const state = { flat: {}, units: {} };
+
+RULES.forEach((group, gi) => {
+  const sec = document.createElement("section");
+  sec.className = "group";
+  sec.style.setProperty("--accent", group.color);
+  if (group.sign) sec.dataset.sign = group.sign;
+  sec.dataset.group = gi;
+
+  const head = document.createElement("div");
+  head.className = "group-head";
+  head.innerHTML = '<h2>' + group.name + '</h2><span class="tag">' + group.tag + '</span>';
+  sec.appendChild(head);
+
+  if (group.note) {
+    const n = document.createElement("p");
+    n.className = "group-note";
+    n.textContent = group.note;
+    sec.appendChild(n);
+  }
+
+  if (group.mode === "repeat") {
+    state.units[gi] = [];
+    const list = document.createElement("div");
+    list.dataset.list = gi;
+    sec.appendChild(list);
+
+    const add = document.createElement("button");
+    add.className = "add";
+    add.type = "button";
+    add.dataset.add = gi;
+    add.textContent = "+ Add " + group.unit.toLowerCase();
+    sec.appendChild(add);
+  } else {
+    group.items.forEach((item, ii) => {
+      const key = "g" + gi + "i" + ii;
+      state.flat[key] = 0;
+      sec.appendChild(makeRow(item, key));
+    });
+  }
+
+  sheet.appendChild(sec);
+});
+
+function makeRow(item, key) {
+  const row = document.createElement("div");
+  row.className = "row";
+  const sign = item.value > 0 ? "+" : "";
+  const id = "f-" + key;
+
+  const control = item.type === "toggle"
+    ? '<div class="toggle"><input type="checkbox" id="' + id + '" data-key="' + key + '"></div>'
+    : '<div class="step">'
+      + '<button type="button" data-key="' + key + '" data-delta="-1" aria-label="Decrease">&ndash;</button>'
+      + '<input type="number" id="' + id + '" min="0" step="1" value="0" data-key="' + key + '" inputmode="numeric">'
+      + '<button type="button" data-key="' + key + '" data-delta="1" aria-label="Increase">+</button>'
+      + '</div>';
+
+  row.innerHTML = '<label for="' + id + '">' + item.label + '</label>'
+    + '<span class="val">' + sign + item.value + '</span>'
+    + control
+    + '<span class="out" data-out="' + key + '">0</span>';
+  return row;
+}
+
+function renderUnits(gi) {
+  const group = RULES[gi];
+  const list  = document.querySelector('[data-list="' + gi + '"]');
+  const units = state.units[gi];
+  list.innerHTML = "";
+
+  if (!units.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "No " + group.unit.toLowerCase() + "s counted yet.";
+    list.appendChild(p);
+    return;
+  }
+
+  units.forEach((counts, ui) => {
+    const card = document.createElement("div");
+    card.className = "unit";
+
+    const head = document.createElement("div");
+    head.className = "unit-head";
+    head.innerHTML = '<h3>' + group.unit + " " + (ui + 1) + '</h3>'
+      + '<span style="display:flex;align-items:center;gap:12px">'
+      + '<span class="unit-sub" data-unitsub="' + gi + "-" + ui + '">0</span>'
+      + '<button type="button" class="rm" data-rm="' + gi + "-" + ui + '">Remove</button>'
+      + '</span>';
+    card.appendChild(head);
+
+    group.items.forEach((item, ii) => {
+      const key = "u" + gi + "-" + ui + "-" + ii;
+      const row = makeRow(item, key);
+      row.querySelector("input").value = counts[ii];
+      card.appendChild(row);
+    });
+
+    list.appendChild(card);
+  });
+}
+
+for (let i = 0; i < TARGET; i++) plot.appendChild(document.createElement("i"));
+const cells = [...plot.children];
+
+function readKey(key) {
+  if (key[0] === "u") {
+    const [gi, ui, ii] = key.slice(1).split("-").map(Number);
+    return state.units[gi][ui][ii];
+  }
+  return state.flat[key];
+}
+
+function writeKey(key, qty) {
+  const v = Math.max(0, Math.round(qty) || 0);
+  if (key[0] === "u") {
+    const [gi, ui, ii] = key.slice(1).split("-").map(Number);
+    state.units[gi][ui][ii] = v;
+  } else {
+    state.flat[key] = v;
+  }
+  const field = document.querySelector('input[data-key="' + key + '"]');
+  if (field) {
+    if (field.type === "checkbox") field.checked = v === 1;
+    else field.value = v;
+  }
+  recalc();
+}
+
+function paint(key, pts) {
+  const out = document.querySelector('[data-out="' + key + '"]');
+  if (!out) return;
+  out.textContent = pts > 0 ? "+" + pts : String(pts);
+  out.className = "out" + (pts > 0 ? " on" : pts < 0 ? " off" : "");
+}
+
+function recalc() {
+  let pos = 0, neg = 0;
+
+  RULES.forEach((group, gi) => {
+    if (group.mode === "repeat") {
+      state.units[gi].forEach((counts, ui) => {
+        let sub = 0;
+        group.items.forEach((item, ii) => {
+          const pts = counts[ii] * item.value;
+          paint("u" + gi + "-" + ui + "-" + ii, pts);
+          sub += pts;
+          if (pts > 0) pos += pts; else neg += pts;
+        });
+        const el = document.querySelector('[data-unitsub="' + gi + "-" + ui + '"]');
+        if (el) {
+          el.textContent = sub > 0 ? "+" + sub : String(sub);
+          el.className = "unit-sub" + (sub > 0 ? " on" : "");
+        }
+      });
+    } else {
+      group.items.forEach((item, ii) => {
+        const key = "g" + gi + "i" + ii;
+        const pts = state.flat[key] * item.value;
+        paint(key, pts);
+        if (pts > 0) pos += pts; else neg += pts;
+      });
+    }
+  });
+
+  const total = pos + neg;
+  document.getElementById("total").textContent = total;
+  document.getElementById("pos").textContent   = "+" + pos;
+  document.getElementById("neg").textContent   = neg;
+  document.getElementById("grand").textContent = total;
+
+  const filled = Math.max(0, Math.min(TARGET, total));
+  cells.forEach((c, i) => { c.className = i < filled ? "set" : ""; });
+  if (total < 0) cells.slice(0, Math.min(TARGET, -total)).forEach(c => { c.className = "lost"; });
+
+  const v = document.getElementById("verdict");
+  if (total >= TARGET)  v.textContent = "The kingdom stands. " + total + " points — " + (total - TARGET) + " to spare.";
+  else if (total > 0)   v.textContent = (TARGET - total) + " points short of a kingdom.";
+  else if (total < 0)   v.textContent = "The countryside is in worse shape than you found it.";
+  else                  v.textContent = "Nothing counted yet.";
+
+  try { sessionStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ── Interaction ─────────────────────────────────────────── */
+
+let armed = null;
+function disarm() {
+  if (armed) { armed.el.dataset.armed = "0"; armed.el.textContent = armed.label; armed = null; }
+}
+function arm(el, warnLabel) {
+  disarm();
+  armed = { el: el, label: el.textContent };
+  el.dataset.armed = "1";
+  el.textContent = warnLabel;
+  setTimeout(() => { if (armed && armed.el === el) disarm(); }, 4000);
+}
+
+sheet.addEventListener("click", e => {
+  const step = e.target.closest("button[data-delta]");
+  if (step) { disarm(); writeKey(step.dataset.key, readKey(step.dataset.key) + Number(step.dataset.delta)); return; }
+
+  const add = e.target.closest("button[data-add]");
+  if (add) {
+    disarm();
+    const gi = Number(add.dataset.add);
+    state.units[gi].push(RULES[gi].items.map(() => 0));
+    renderUnits(gi);
+    recalc();
+    return;
+  }
+
+  const rm = e.target.closest("button[data-rm]");
+  if (rm) {
+    if (armed && armed.el === rm) {
+      const [gi, ui] = rm.dataset.rm.split("-").map(Number);
+      armed = null;
+      state.units[gi].splice(ui, 1);
+      renderUnits(gi);
+      recalc();
+    } else {
+      arm(rm, "Tap to confirm");
+    }
+    return;
+  }
+  disarm();
+});
+
+sheet.addEventListener("input", e => {
+  const f = e.target;
+  if (!f.dataset.key) return;
+  writeKey(f.dataset.key, f.type === "checkbox" ? (f.checked ? 1 : 0) : Number(f.value));
+});
+
+function clearAll() {
+  Object.keys(state.flat).forEach(k => { state.flat[k] = 0; });
+  document.querySelectorAll("input[data-key]").forEach(f => {
+    if (f.type === "checkbox") f.checked = false; else f.value = 0;
+  });
+  RULES.forEach((g, gi) => {
+    if (g.mode === "repeat") { state.units[gi] = []; renderUnits(gi); }
+  });
+  recalc();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.getElementById("reset").addEventListener("click", clearAll);
+document.getElementById("print").addEventListener("click", () => window.print());
+
+/* ── Restore ─────────────────────────────────────────────── */
+try {
+  const saved = JSON.parse(sessionStorage.getItem(SAVE_KEY) || "null");
+  if (saved && saved.flat) {
+    Object.keys(saved.flat).forEach(k => { if (k in state.flat) state.flat[k] = saved.flat[k]; });
+    document.querySelectorAll("input[data-key]").forEach(f => {
+      const k = f.dataset.key;
+      if (k in state.flat) { if (f.type === "checkbox") f.checked = state.flat[k] === 1; else f.value = state.flat[k]; }
+    });
+  }
+  if (saved && saved.units) {
+    Object.keys(saved.units).forEach(gi => {
+      const g = RULES[gi];
+      if (g && g.mode === "repeat" && Array.isArray(saved.units[gi])) {
+        state.units[gi] = saved.units[gi].map(c => g.items.map((_, ii) => Number(c[ii]) || 0));
+      }
+    });
+  }
+} catch (e) {}
+
+RULES.forEach((g, gi) => { if (g.mode === "repeat") renderUnits(gi); });
+recalc();
+</script>
+</body>
+</html>
